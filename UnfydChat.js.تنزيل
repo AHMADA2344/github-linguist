@@ -1,0 +1,556 @@
+let scriptElement = document.querySelector('script[src*="UnfydChat.js"]');
+// Create a URL object from the script source
+let url = new URL(scriptElement.src);
+
+var link = document.createElement('link');
+link.rel = 'stylesheet';
+link.type = 'text/css';
+// link.href = `./popup-style.css`;
+link.href = `${url.origin}/site-demo/webchat/popup-style.css`;
+document.head.appendChild(link);
+let Adminconfig;
+let AdminConfigLang;
+let eyeCatcherHeading;
+let eyeCatcherText;
+
+// Create  default chat Button
+var botBtn = document.createElement('a');
+botBtn.id = 'botBtn';
+document.body.appendChild(botBtn);
+
+// to add image in chat button as a icon
+
+const parentDiv = document.createElement('div');
+parentDiv.id = 'botparent';
+parentDiv.classList.add('chatbtn', 'borderRadius100-rightbottom-0');
+const childDivimg = document.createElement('div');
+childDivimg.id = 'child';
+const img = document.createElement('img');
+
+img.height = 32;
+img.width = 32;
+img.style.padding = '10px';
+
+parentDiv.classList.add('default-bottom-right');
+parentDiv.appendChild(childDivimg);
+childDivimg.appendChild(img);
+
+const childdivtext = document.createElement('div');
+document.getElementById('botBtn').appendChild(parentDiv);
+
+var eyeCatcher_bubble = document.createElement('div');
+eyeCatcher_bubble.id = 'eyeCatcher_bubble';
+document.body.appendChild(eyeCatcher_bubble);
+document.getElementById('eyeCatcher_bubble').style.display = 'block';
+document.getElementById('botBtn').addEventListener('mouseenter', showdiv);
+document.getElementById('botBtn').addEventListener('mouseleave', hidediv);
+function showdiv() {
+  if (!document.getElementById('botBtn').classList.contains('open')) {
+    document.getElementById('eyeCatcher_bubble').style.display = 'block';
+  }
+}
+function hidediv() {
+  document.getElementById('eyeCatcher_bubble').style.display = 'none';
+}
+// on button hover show eyepicker code end
+
+// Create Iframe
+var botIframe = document.createElement('iframe');
+let QueriesObj = {};
+let queriesObjString = null;
+
+const urlParams = new URLSearchParams(window.location.search);
+for (const [key, value] of urlParams) {
+  QueriesObj[key] = value;
+}
+// Extract the TenantId and ChannelSource from the URL object
+let tenantId = url.searchParams.get('TenantId') || QueriesObj.TenantId;
+let channelSource = url.searchParams.get('ChannelSource') || QueriesObj.ChannelSource;
+let Debug = url.searchParams.get('Debug') || QueriesObj.Debug;
+let origin = url.origin.split(":")[0] == "https" ? url.origin : `http://localhost:4200`;
+var tenantID = tenantId;
+
+if (tenantId && channelSource) {
+  botIframe.id = "botIframe";
+  botIframe.classList.add("botIframe-bottom-right");
+
+  // Get the host name
+  botIframe.src = `${origin}/webchat/#/${tenantId}/${channelSource}`;
+  // Debug value
+  if (Debug == 'true') {
+    botIframe.src += '/true'
+  }
+  console.log('botIframe.src: ', botIframe.src);
+}
+
+botIframe.style.display = 'none';
+document.body.appendChild(botIframe);
+var x = document.getElementById('botIframe');
+
+// Toggle Bot Container
+function toggleBot() {
+  if (x.style.display === 'none') {
+    if (Adminconfig.chatButtonShape && Adminconfig.chatButtonShape !== '') {
+    }
+    x.style.display = 'block';
+    document.getElementById('botBtn').classList.add('open');
+    x.contentWindow.postMessage('open', '*');
+    document.getElementById('eyeCatcher_bubble').style.display = 'none';
+  } else {
+    x.style.display = 'none';
+    document.getElementById('botBtn').classList.remove('open');
+    parentDiv.style.display = 'flex';
+    x.contentWindow.postMessage('close', '*');
+    document.getElementById('eyeCatcher_bubble').style.display = 'block';
+  }
+}
+
+// Button Click
+document.getElementById('botBtn').addEventListener('click', toggleBot);
+
+// Mobile Detect
+function iframeHeightwidth(height, width) {
+  if (
+    /Android|webOS|iPhone|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    )
+  ) {
+    document.getElementById('botIframe').style.height = '100%';
+  } else {
+    document.getElementById('botIframe').style.height = height
+      ? height + 'px' : '520px';
+    document.getElementById('botIframe').style.width = width
+      ? width + 'px' : '380px';
+  }
+}
+iframeHeightwidth('520', '380');
+
+// Close event from Iframe
+window.addEventListener('message', (event) => {
+  if (event.data == 'none') {
+    x.style.display = `${event.data}`;
+    document.getElementById('botBtn').classList.remove('open');
+    document.getElementById('botBtn').classList.add('botBtn_open');
+  }
+
+  // if(Adminconfig && Adminconfig.toggleWebEngage){
+    // }
+    if(event?.data?.webEngagement?.TYPE === 'ChatWithExpert'){
+      ChatWithExpert();
+    }
+
+    if(event?.data?.webEngagement?.TYPE === 'INITIATECHAT'){
+      InitiateChat();
+    }
+  
+  if (event.data.AdminConfigLang && event.data.Language) {
+    AdminConfigLang = event.data.AdminConfigLang;
+    
+    if (AdminConfigLang?.OnlineButtonTitle && AdminConfigLang?.OnlineButtonTitle[event.data.Language]) {
+      let arr1 = document.getElementsByClassName('chatbtn-label');
+      if (arr1.length > 0) {
+        document.getElementsByClassName('chatbtn-label')[0].innerHTML =
+          AdminConfigLang.OnlineButtonTitle[event.data.Language];
+      }
+    }
+    if (AdminConfigLang?.EyecatcherText && AdminConfigLang?.EyecatcherText[event.data.Language]) {
+      eyeCatcherText = AdminConfigLang.EyecatcherText[event.data.Language];
+    }
+    if (AdminConfigLang?.EyecatcherHeading && AdminConfigLang?.EyecatcherHeading[event.data.Language]) {
+      eyeCatcherHeading = AdminConfigLang.EyecatcherHeading[event.data.Language];
+    }
+    
+  }
+
+  if (event.data.Adminconfig) {
+    try {
+      document.getElementById('botparent').style.display = 'inline-flex';
+      Adminconfig = event.data.Adminconfig;
+      botparent.style.background = Adminconfig.themeColor;
+      botparent.style.fontFamily = Adminconfig.selectFont;
+      botparent.classList.add(Adminconfig?.chatButtonPosition); // to set bot button position
+      botIframe.classList.add(`botIframe-${Adminconfig?.chatButtonPosition}`); // to set iframe position
+      eyeCatcher_bubble.classList.add(`eyechat-${Adminconfig?.chatButtonPosition}`); // to set position of eyechater
+
+      // to check chat button icon style
+      if (Adminconfig?.UploadDemoBGImg) {
+        let body = document.querySelector('body');
+        body.style.backgroundImage = 'url("' + Adminconfig.UploadDemoBGImg + '")';
+      }
+      if (Adminconfig?.eyeCatcherHeading) {
+        eyeCatcherHeading = Adminconfig.eyeCatcherHeading;
+      }
+      if (Adminconfig?.eyeCatcherText) {
+        eyeCatcherText = Adminconfig.eyeCatcherText;
+      }
+      if(Adminconfig.toggleWebEngage){
+        window.postMessage('ShowWebEngage', '*');
+      }  
+      
+      if (Adminconfig?.eyeCatcher == 'eyeCatcher1') {
+        document.getElementById('eyeCatcher_bubble').innerHTML = `<div class="eyecaht1 ">
+          <div class="caher-banner">
+            <img src=${url.origin}/site-demo/webchat/assets/agent-1.png alt="agent">
+          </div>
+          <div class="eyecatcher-title">
+            ${eyeCatcherHeading}
+          </div>
+          <div class="eyecatcher-subtitle">
+          ${eyeCatcherText}
+          </div>
+        </div>`;
+      } else if (Adminconfig?.eyeCatcher == 'eyeCatcher2') {
+        document.getElementById('eyeCatcher_bubble').innerHTML = `<div class="eyechater2">
+            <div class="caher-banner">
+              <img src=${url.origin}/site-demo/webchat/assets/agent-1.png alt="agent">
+            </div>
+            <div class="caher-data">
+              <h4>${eyeCatcherHeading}</h4>
+              <p>${eyeCatcherText}</p>
+            </div>
+          </div> `;
+      }
+      hidediv();
+      if (Adminconfig.selectedchatIconStyle) {
+        if (Adminconfig.selectedchatIconStyle == 'Icon') {
+          if (Adminconfig.chatIconStyle == 'chat1') {
+            img.src = `./assets/img/chatbtn-shape/shape1.svg`;
+          } else if (Adminconfig.chatIconStyle == 'chat2') {
+            img.src = `./assets/img/chatbtn-shape/shape2.svg`;
+          } else if (Adminconfig.chatIconStyle == 'chat3') {
+            img.src = `./assets/img/chatbtn-shape/shape3.svg`;
+          } else if (Adminconfig.chatIconStyle == 'chat4') {
+            img.src = `./assets/img/chatbtn-shape/shape4.svg`;
+          } else if (Adminconfig.chatIconStyle == 'chat5') {
+            img.src = `./assets/img/chatbtn-shape/shape5.svg`;;
+          } else if (Adminconfig.chatIconStyle == '') {
+            img.src = Adminconfig.UploadChatInitiateIcon;
+          }
+          img.height = 35;
+          img.width = 35;
+          img.style.padding = '0px';
+
+          if (Adminconfig.chatButtonShape) {
+            if (Adminconfig.chatIconStyle) {
+              if (Adminconfig.chatIconStyle == 'chat1') {
+                img.src = `${origin}/site-demo/webchat/assets/img/chatbtn-shape/shape1.svg`;
+              } else if (Adminconfig.chatIconStyle == 'chat2') {
+                img.src = `${origin}/site-demo/webchat/assets/img/chatbtn-shape/shape2.svg`;
+              } else if (Adminconfig.chatIconStyle == 'chat3') {
+                img.src = `${origin}/site-demo/webchat/assets/img/chatbtn-shape/shape3.svg`
+              } else if (Adminconfig.chatIconStyle == 'chat4') {
+                img.src = `${origin}/site-demo/webchat/assets/img/chatbtn-shape/shape4.svg`
+              } else if (Adminconfig.chatIconStyle == 'chat5') {
+                img.src = `${origin}/site-demo/webchat/assets/img/chatbtn-shape/shape5.svg`
+                // img.src = './assets/img/chatbtn-shape/shape5.svg';
+              }
+              img.height = 40;
+              img.width = 40;
+            }
+            // botparent.style.background = Adminconfig?.themeColor;
+            // chatbtn bottom-right borderRadius10 chatpadd-10
+            // parentDiv.classList.remove('borderRadius100-rightbottom-0');
+            // parentDiv.classList.add('borderRadius10', 'chatpadd-10');
+            if (Adminconfig?.chatTitleOnline) {
+              let arr1 = document.getElementsByClassName('chatbtn-label');
+              if (arr1.length > 0) {
+                document.getElementsByClassName('chatbtn-label')[0].innerHTML =
+                  Adminconfig.chatTitleOnline;
+              }
+            }
+          }
+          // to check chat button shape
+          if (Adminconfig.chatButtonShape) {
+            var parentElement = document.getElementById('botparent');
+            // Get the number of child div elements
+            var childDivCount = parentElement.getElementsByTagName('div').length;
+            // alert(parentElement.getElementsByTagName('div').length)
+            if (Adminconfig.chatButtonShape == 'chatButtonShape1') {
+              if (childDivCount == 1 && Adminconfig?.chatTitleOnline) {
+                const childdivtext = document.createElement('div');
+                childdivtext.classList.add('chatbtn-label');
+                const textNode = document.createTextNode(
+                  Adminconfig.chatTitleOnline
+                );
+                childdivtext.appendChild(textNode);
+                parentDiv.appendChild(childdivtext);
+              }
+              img.height = 40;
+              img.width = 40;
+            }
+            // botparent.style.background = Adminconfig?.themeColor;
+            // chatbtn bottom-right borderRadius10 chatpadd-10
+            // parentDiv.classList.remove('borderRadius100-rightbottom-0');
+            // parentDiv.classList.add('borderRadius10', 'chatpadd-10');
+            if (Adminconfig?.chatTitleOnline) {
+              let arr1 = document.getElementsByClassName('chatbtn-label');
+              if (arr1.length > 0) {
+                document.getElementsByClassName('chatbtn-label')[0].innerHTML =
+                  Adminconfig.chatTitleOnline;
+              }
+            }
+          }
+        }
+        // to check chat button shape
+        if (Adminconfig.chatButtonShape) {
+          document.documentElement.style.setProperty(`--side_Spacing`, Adminconfig.sideSpacing ? Adminconfig.sideSpacing + "px" : "0" + "px");
+          document.documentElement.style.setProperty(`--bottom_Spacing`, Adminconfig.bottomSpacing ? Adminconfig.bottomSpacing + "px" : "0" + "px");
+          if (Adminconfig.themeColor) {
+            document.documentElement.style.setProperty(`--theme_color`, Adminconfig.themeColor);
+          }
+          if (Adminconfig.selectFont) {
+            document.documentElement.style.setProperty(`--fontfamily`, Adminconfig.selectFont);
+          }
+          if (Adminconfig.UploadDemoBGImg) {
+            document.documentElement.style.setProperty(`--demo_BGImage`, Adminconfig.UploadDemoBGImg ? Adminconfig.UploadDemoBGImg : './assets/jazjeera.png');
+          }
+          var parentElement = document.getElementById('botparent');
+          // Get the number of child div elements
+          var childDivCount = parentElement.getElementsByTagName('div').length;
+          // alert(parentElement.getElementsByTagName('div').length)
+          if (Adminconfig.chatButtonShape == 'chatButtonShape1') {
+            if (childDivCount == 1 && Adminconfig?.chatTitleOnline) {
+              const childdivtext = document.createElement('div');
+              childdivtext.classList.add('chatbtn-label');
+              const textNode = document.createTextNode(
+                Adminconfig.chatTitleOnline
+              );
+              childdivtext.appendChild(textNode);
+              parentDiv.appendChild(childdivtext);
+            }
+            // botparent.classList.add("borderRadius10", "chatpadd-10");
+            botparent.classList.add('borderRadius35', 'chatpadd-10');
+            botparent.classList.remove(
+              'borderRadius100-rightbottom-0',
+              'open',
+              'default-bottom-right'
+            );
+          } else if (Adminconfig.chatButtonShape == 'chatButtonShape2') {
+            botparent.classList.add('borderRadius100', 'chatpadd-10');
+            botparent.classList.remove(
+              'borderRadius100-rightbottom-0',
+              'open',
+              'default-bottom-right'
+            );
+          } else if (Adminconfig.chatButtonShape == 'chatButtonShape3') {
+            if (childDivCount == 1 && Adminconfig?.chatTitleOnline) {
+              const childdivtext = document.createElement('div');
+              childdivtext.classList.add('chatbtn-label');
+              const textNode = document.createTextNode(
+                Adminconfig.chatTitleOnline
+              );
+              childdivtext.appendChild(textNode);
+              parentDiv.appendChild(childdivtext);
+            }
+
+            botparent.classList.add('borderRadius10', 'chatpadd-10');
+            botparent.classList.remove(
+              'borderRadius100-rightbottom-0',
+              'open',
+              'default-bottom-right'
+            );
+          } else if (Adminconfig.chatButtonShape == 'chatButtonShape4') {
+            botparent.classList.add('borderRadius10', 'chatpadd-10');
+            botparent.classList.remove(
+              'borderRadius100-rightbottom-0',
+              'open',
+              'default-bottom-right'
+            );
+          } else if (Adminconfig.chatButtonShape == 'chatButtonShape5') {
+            if (childDivCount == 1 && Adminconfig?.chatTitleOnline) {
+              const childdivtext = document.createElement('div');
+              botparent.classList.add('borderRadius10', 'chatpadd-10');
+              const textNode = document.createTextNode(
+                Adminconfig.chatTitleOnline
+              );
+              childdivtext.classList.add('chatbtn-label');
+              childdivtext.appendChild(textNode);
+              parentDiv.appendChild(childdivtext);
+            }
+
+            botparent.classList.add(
+              'borderRadius10-rightbottom-0',
+              'chatpadd-10'
+            );
+            botparent.classList.remove('open', 'default-bottom-right');
+          } else if (Adminconfig.chatButtonShape == 'chatButtonShape6') {
+            botparent.classList.add(
+              'borderRadius10-rightbottom-0',
+              'chatpadd-10'
+            );
+            botparent.classList.remove(
+              'borderRadius100-rightbottom-0',
+              'open',
+              'default-bottom-right'
+            );
+          } else if (Adminconfig.chatButtonShape == 'chatButtonShape7') {
+            botparent.style.background = 'transparent';
+            imgage = Adminconfig.chatIconUploaded;
+            img.src = imgage;
+            botparent.classList.remove(
+              'borderRadius100-rightbottom-0',
+              'open',
+              'default-bottom-right'
+            );
+          }
+        }
+        if (Adminconfig.selectedchatIconStyle == 'Image') {
+          document.getElementById('botparent').style.background = 'transparent';
+          if (Adminconfig.chatIconImageStyle == 'agent-avatar1') {
+            img.src = `${origin}/site-demo/webchat/assets/agent-1.png`;
+          } else if (Adminconfig.chatIconImageStyle == 'agent-avatar2') {
+            img.src = `${origin}/site-demo/webchat/assets/agent-2.png`;
+          } else if (Adminconfig.chatIconImageStyle == 'customChatImage') {
+            img.src = Adminconfig.chatImageUploaded;
+          }
+          img.height = 50;
+          img.width = 50;
+          img.style.padding = '0px';
+        }
+        if (Adminconfig.UploadDemoBGImg) {
+          document.documentElement.style.setProperty(`--demo_BGImage`, Adminconfig.UploadDemoBGImg ? Adminconfig.UploadDemoBGImg : './assets/jazjeera.png');
+        }
+        document.documentElement.style.setProperty(`--side_Spacing`, Adminconfig.sideSpacing ? Adminconfig.sideSpacing  + "px": "0" + "px");
+        document.documentElement.style.setProperty(`--bottom_Spacing`, Adminconfig.bottomSpacing ? Adminconfig.bottomSpacing  + "px": "0" + "px");
+        if (Adminconfig.themeColor) {
+          document.documentElement.style.setProperty(`--theme_color`, Adminconfig.themeColor);
+        }
+        if (Adminconfig.selectFont) {
+          document.documentElement.style.setProperty(`--fontfamily`, Adminconfig.selectFont);
+        }
+      }
+
+      // // to check chat button shape
+      // if (Adminconfig.chatButtonShape) {
+      // 	var parentElement = document.getElementById('botparent');
+      // 	// Get the number of child div elements
+      // 	var childDivCount = parentElement.getElementsByTagName('div').length;
+      // 	// alert(parentElement.getElementsByTagName('div').length)
+      // 	if (Adminconfig.chatButtonShape == "chatButtonShape1") {
+      // 		if (childDivCount == 1 && Adminconfig?.chatTitleOnline) {
+      // 			const childdivtext = document.createElement("div");
+      // 			childdivtext.classList.add("chatbtn-label");
+      // 			const textNode = document.createTextNode(Adminconfig.chatTitleOnline);
+      // 			childdivtext.appendChild(textNode);
+      // 			parentDiv.appendChild(childdivtext);
+
+      // 		}
+      // 		// botparent.classList.add("borderRadius10", "chatpadd-10");
+      // 		botparent.classList.add("borderRadius35", "chatpadd-10");
+      // 		botparent.classList.remove("borderRadius100-rightbottom-0", "open", "default-bottom-right");
+
+      // 	}
+
+      // 	else if (Adminconfig.chatButtonShape == "chatButtonShape2") {
+
+      // 		botparent.classList.add("borderRadius100", "chatpadd-10");
+      // 		botparent.classList.remove("borderRadius100-rightbottom-0", "open", "default-bottom-right");
+      // 	}
+      // 	else if (Adminconfig.chatButtonShape == "chatButtonShape3") {
+      // 		if (childDivCount == 1 && Adminconfig?.chatTitleOnline) {
+      // 			const childdivtext = document.createElement("div");
+      // 			childdivtext.classList.add("chatbtn-label");
+      // 			const textNode = document.createTextNode(Adminconfig.chatTitleOnline);
+      // 			childdivtext.appendChild(textNode);
+      // 			parentDiv.appendChild(childdivtext);
+
+      // 		}
+
+      // 		botparent.classList.add("borderRadius10", "chatpadd-10");
+      // 		botparent.classList.remove("borderRadius100-rightbottom-0", "open", "default-bottom-right");
+      // 	}
+      // 	else if (Adminconfig.chatButtonShape == "chatButtonShape4") {
+      // 		botparent.classList.add("borderRadius10", "chatpadd-10");
+      // 		botparent.classList.remove("borderRadius100-rightbottom-0", "open", "default-bottom-right");
+      // 	}
+      // 	else if (Adminconfig.chatButtonShape == "chatButtonShape5") {
+      // 		if (childDivCount == 1 && Adminconfig?.chatTitleOnline) {
+      // 			const childdivtext = document.createElement("div");
+      // 			botparent.classList.add("borderRadius10", "chatpadd-10");
+      // 			const textNode = document.createTextNode(Adminconfig.chatTitleOnline);
+      // 			childdivtext.classList.add("chatbtn-label");
+      // 			childdivtext.appendChild(textNode);
+      // 			parentDiv.appendChild(childdivtext);
+
+      // 		}
+
+      // 		botparent.classList.add("borderRadius10-rightbottom-0", "chatpadd-10");
+      // 		botparent.classList.remove("open", "default-bottom-right");
+      // 	}
+      // 	else if (Adminconfig.chatButtonShape == "chatButtonShape6") {
+      // 		botparent.classList.add("borderRadius10-rightbottom-0", "chatpadd-10");
+      // 		botparent.classList.remove("borderRadius100-rightbottom-0", "open", "default-bottom-right");
+      // 	}
+      // 	else if (Adminconfig.chatButtonShape == 'chatButtonShape7') {
+      // 		botparent.style.background = 'transparent';
+      // 		imgage = Adminconfig.chatIconUploaded;
+      // 		img.src = imgage;
+      // 		botparent.classList.remove("borderRadius100-rightbottom-0", "open", "default-bottom-right");
+      // 	}
+      // }
+      if (Adminconfig?.chatContainerHeight || Adminconfig?.chatContainerWidth) {
+        iframeHeightwidth(
+          Adminconfig?.chatContainerHeight,
+          Adminconfig?.chatContainerWidth
+        );
+      }
+    } catch (error) {
+      console.log('AdminConfig error :', error);
+    }
+  }
+  if (event.data == 'pinChat') {
+    console.log('chat initiate');
+    window.postMessage('chatinitiateFromWebengagementTowebchat', '*');
+  }
+  if (event.data == 'CobrowseStartFromNg') {
+    console.log('CobrowseStartFromNg');
+    StartCoBrowse('ABC', 'ABC', 'ABC', 'ABC');
+  }
+  if (event.data == 'CobrowseEndFromNg') {
+    StopSession(false);
+    console.log('CobrowseEndFromApp');
+    x.contentWindow.postMessage('CobrowseEndFromApp', '*');
+  }
+});
+
+function StartCoBrowse(val1, val2, val3, val4) {
+  try {
+    var CobrowseSessionKey = '';
+    CobrowseSessionKey = getKey();
+    let CobrowseStartObj = {
+      event: 'CobrowseStartFromApp',
+      key: CobrowseSessionKey,
+    };
+    x.contentWindow.postMessage(CobrowseStartObj, '*');
+    StartCoBrowsing(val1, val2, val3, val4);
+    localStorage.setItem('UF_CobrowseSessionKey', CobrowseSessionKey);
+  } catch (error) {
+    console.log('error', error);
+  }
+}
+
+
+function closePopup() {
+  $('.We-popup-container').hide();
+  //$('#WEPopUpModel' + PopupType).remove();
+}
+
+function ChatWithExpert() {
+  x.contentWindow.postMessage('chatWithExpert', '*');
+  if (x.style.display === 'none') {
+    toggleBot();
+    closePopup();
+  }
+}
+
+function InitiateChat(){
+  x.contentWindow.postMessage('InitiateChat', '*');
+  if (x.style.display === 'none') {
+    toggleBot();
+    closePopup();
+  }
+}
+
+
+
+

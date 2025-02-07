@@ -1,0 +1,114 @@
+//Jazeera Airways
+
+
+/*
+var cybConvInt = setInterval(convChkCybba,1000);
+
+function convChkCybba(){
+	if(!!~window.location.href.toLowerCase().indexOf("booking-confirmation") && document.querySelector(".reservation-code") ){
+		window.cybOrderData = {
+			order_id: (document.querySelector('.partners-logo') || (document.querySelector('.header-logo img') && document.querySelector('.header-logo img').src.match(/(partners)/gi))) ? (document.querySelector(".reservation-code").textContent.trim() + "|TA") : document.querySelector(".reservation-code").textContent.trim(),
+			value: document.querySelector(".price-summary-total strong").textContent.match(/[0-9.,]+/)[0].replace(",",""),
+			currency: document.querySelector(".price-summary-total .summary-cost").textContent.match(/[A-Z]+/)[0]
+		};
+		if(document.querySelector('.partners-logo') || (document.querySelector('.header-logo img') && !document.querySelector('.header-logo img').src.match(/(partners)/gi)) && !~document.cookie.indexOf('cybTAUser')){
+		   createCybbaPixel("https://insight.adsrvr.org/track/pxl/?adv=zyg91uq&ct=0:m4euh5u&fmt=3&td1="+cybOrderData.order_id+"&td2="+cybOrderData.currency+"&v="+cybOrderData.value);
+		}
+		window._vteq = window._vteq || [];
+		window._vteq.push({
+			confirmation: {
+				items: [],
+				orderId: window.cybOrderData.order_id,
+				total: window.cybOrderData.value
+			}
+		});
+		ttd_dom_ready( function() {
+			if (typeof TTDUniversalPixelApi === 'function') {
+				var universalPixelApi = new TTDUniversalPixelApi();
+				universalPixelApi.init("zyg91uq", ["moihfa9"], "https://insight.adsrvr.org/track/up", {
+					"td1": window.cybOrderData.order_id,
+					"td2": window.cybOrderData.currency,
+					"v": window.cybOrderData.value
+				});
+			}
+		});
+		clearInterval(cybConvInt);
+	}
+}
+
+
+
+if(!!~window.location.href.indexOf("showAgencyLogin")){
+	var buttonVar = setInterval(buttonChk,1000);
+	function buttonChk(){
+		if(document.querySelector("#agencyLoginForm .btn-wrap")){
+		  	document.querySelector("#agencyLoginForm .btn-wrap").addEventListener("mousedown",function(){
+				createCybbaPixel("https://insight.adsrvr.org/track/pxl/?adv=zyg91uq&ct=0:klx6l4x&fmt=3");
+			})
+			clearInterval(buttonVar)
+		}
+	}
+}
+
+if(document.querySelector('.partners-logo') || (document.querySelector('.header-logo img') && document.querySelector('.header-logo img').src.match(/(partners)/gi))){
+     createCybbaPixel("https://insight.adsrvr.org/track/pxl/?adv=zyg91uq&ct=0:klx6l4x&fmt=3");
+	setCookieCYB('cybTAUser', true, 1)
+	 
+}
+
+var flightIntCyb = setInterval(flightChkCyb,1000);
+function flightChkCyb(){	
+	if(document.querySelector("div.place.from") && document.querySelector("div.place.to")){
+		let cybFlightString = document.querySelector("div.place.from").textContent.match(/[A-Z]+$/)[0]+"\\"+"-"+document.querySelector("div.place.to").textContent.match(/[A-Z]+$/)[0];
+		createCybbaPixel("https://ad.adacado.com/pixel/v1/5013?productid="+cybFlightString);
+		clearInterval(flightIntCyb);
+	}
+}
+
+try{
+    var shopUrlCYB = '2273'
+    !function(){var e=function(e){var t=document.createElement("script");t.type="text/javascript",t.async=!0,t.src=e;var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n)},t=~document.cookie.indexOf("cybbatest")?"files":"files1";e("https://"+t+".cybba.solutions/"+shopUrlCYB+"/loader.min.js"),e("//d2rp1k1dldbai6.cloudfront.net/js-minified/cybba_latest_mini_v1.5.js"),window._vteq=window._vteq||[],setTimeout(function(){window._vtsdk||e("https://storage.googleapis.com/cybcdn/"+shopUrlCYB+"/loader.js?")},1100),setTimeout(function(){if("nestedVarDefined"in window&&!nestedVarDefined("_vtsdk.state.eventQueue")&&"_vtsdk"in window) _vtsdk.init();},1500)}()}catch(e){}
+
+function createCybbaPixel(src){
+    var input = document.createElement('img');
+    input.setAttribute('src',src);
+    input.setAttribute('width', 0);
+    input.setAttribute('height', 0);
+    input.setAttribute('alt', "");
+    input.setAttribute('style', "display:none !important;");
+    document.getElementsByTagName("body")[0].appendChild(input); 
+}
+
+function createCybbaScript(src){
+    var input = document.createElement('script');
+    input.setAttribute('src',src);
+    document.getElementsByTagName("head")[0].appendChild(input); 
+}
+loadTTDCybba();
+
+function loadTTDCybba(){
+	if(!document.querySelector("script[src*='js.adsrvr.org/up_loader.1.1.0']")){
+	  	createCybbaScript("https://js.adsrvr.org/up_loader.1.1.0.js");
+	}
+    if(typeof ttd_dom_ready != "undefined" && typeof cybOrderData != "undefined"){
+		ttd_dom_ready( function() {
+			if (typeof TTDUniversalPixelApi === 'function') {
+				var universalPixelApi = new TTDUniversalPixelApi();
+				universalPixelApi.init("zyg91uq", ["moihfa9"], "https://insight.adsrvr.org/track/up", {
+					"td1": window.cybOrderData.order_id,
+					"td2": window.cybOrderData.currency,
+					"v": window.cybOrderData.value
+				});
+			}
+		});
+	}else if(typeof ttd_dom_ready != "undefined"){
+        ttd_dom_ready( function() {
+            if (typeof TTDUniversalPixelApi === 'function') {
+                var universalPixelApi = new TTDUniversalPixelApi();
+                universalPixelApi.init("zyg91uq", ["moihfa9"], "https://insight.adsrvr.org/track/up");
+            }
+        });
+    }else{
+        setTimeout(loadTTDCybba,250)
+    }
+}
